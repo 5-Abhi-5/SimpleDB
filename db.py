@@ -5,7 +5,7 @@ def main():
     db = simpleDB(db_name)
     print(f"Database {db_name} initialized.")
     while True:
-        command = input("Enter command (set/get/delete/exists/clear/exit/deleteDatabase): ").strip().lower()
+        command = input("Enter command (set/get/delete/exists/clear/drop/exit): ").strip().lower()
         if command == "exit":
             print("\nExiting the database.\n")
             print("Database exited successfully.\n")
@@ -29,8 +29,8 @@ def main():
         elif command == "clear":
             db.clear()
             print("Database cleared")
-        elif command == "deletedatabase":
-            db.deleteDatabase()
+        elif command == "drop":
+            db.drop()
             print("Database deleted")
             print("\nExiting the database.\n")
             print("Database exited successfully.\n")

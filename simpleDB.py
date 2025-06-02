@@ -39,7 +39,7 @@ class simpleDB:
         except FileNotFoundError:
             pass
     
-    def deleteDatabase(self):
+    def drop(self):
         try:
             import os
             os.remove(self.db_name)
