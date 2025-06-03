@@ -1,6 +1,6 @@
 # 🪶 SimpleDB
 
-**SimpleDB** is a lightweight key-value database written in Python. It provides persistent storage on disk and supports common operations like `SET`, `GET`, `DELETE`, `EXISTS`, `CLEAR`, and `DROP`. The database is accessible via a simple CLI.
+**SimpleDB** is a lightweight key-value database written in Python. It provides persistent storage on disk and supports common operations like `SET`, `GET`, `DELETE`, `EXISTS`, `CLEAR`, and `DROP`. The database is accessible via a simple CLI with crash recovery using **Write-Ahead Logging (WAL)**.
 
 ---
 
@@ -8,8 +8,9 @@
 
 - ✅ Key-Value store architecture
 - 💾 Persistent file storage on disk
-- 🧾 Simple CLI for executing commands
+- 🖥️ Simple CLI for executing commands
 - ⚡ Fast in-memory access with file sync
+- 🧾 Write-Ahead Logging (WAL) for crash recovery
 - 🔐 Commands:
   - `SET <key> <value>` – Insert or update a key
   - `GET <key>` – Retrieve a value by key

@@ -1,6 +1,11 @@
 from simpleDB import simpleDB
+
+'''
+Main function to interact with the simpleDB.
+Prompts the user for commands to set, get, delete, check existence, clear, or drop the database.
+'''
 def main():
-    print
+    print("\n\nWelcome to simpleDB!\n\n")
     db_name = input("Enter database name: ").strip()
     db = simpleDB(db_name)
     print(f"Database {db_name} initialized.")
@@ -37,6 +42,7 @@ def main():
             break
         else:
             print("Unknown command")
+      
             
 if __name__ == "__main__":
     main()     
