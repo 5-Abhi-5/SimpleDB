@@ -41,17 +41,23 @@ class wal:
         Returns:
             bool: True if the log entry was written successfully, False otherwise.
     '''
-    def write_log(self, operation, key, value=None) -> bool:
+    def write_log(self, operation, key, value=None,state="START") -> bool:
         operation = operation.upper()
         if self.log_file is None:
             print("Log file is not open. Cannot write log.")
             return False
         
         try:
-            if value is not None:
-                log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] {operation} {key} {value}\n"
+            if self.custom_wal:
+                if value is not None:
+                    log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] [{state}] {operation} {key} {value}\n"
+                else:
+                    log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] [{state}] {operation} {key}\n"
             else:
-                log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] {operation} {key}\n"
+                if value is not None:
+                    log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] {operation} {key} {value}\n"
+                else:
+                    log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] {operation} {key}\n"
             self.log_file.write(log_entry)
             self.log_file.flush()
             print(f"Logged: {log_entry.strip()}")

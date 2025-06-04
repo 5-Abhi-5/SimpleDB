@@ -34,6 +34,8 @@ class simpleDB:
         if wal.write_log(self.wal, "set", key, value):
             self.data[key] = value
             self.save()
+            if self.wal.custom_wal:
+                self.wal.write_log("set", key, value, state="SUCCESS")
         else:
             print("operation failed")
 
@@ -60,6 +62,8 @@ class simpleDB:
         if key in self.data and self.wal.write_log("delete", key):
             del self.data[key]
             self.save()
+            if self.wal.custom_wal:
+                self.wal.write_log("set", key, state="SUCCESS")
         else:
             print("operation failed")
         
@@ -90,7 +94,7 @@ class simpleDB:
     This method writes all key-value pairs in the data dictionary to the database file.
     '''
     def save(self):
-        with open(self.db_name, 'w') as f:
+        with open(self.db_name,'w') as f:
             for key, value in self.data.items():
                 f.write(f"{key}:{value}\n")
     
@@ -101,20 +105,68 @@ class simpleDB:
     If the log file does not exist, it is ignored.
     If an error occurs while reading the log file, an error message is printed.
     '''
+    '''
+    custom_wal==True
+        This block is used to load the database from log file in Compute Efficient way.
+        This only performs data operation only if it failed to persist in database file and existed in log file (maintains durability and atomacity).
+    
+    custom_wal==False
+        This block is used to load the database from log file in Memory Efficient way.
+        This processes each log entry and updates the database accordingly.
+        It is memory efficient as the log file maintains a single log of operations rather than storing the success of operations also.
+    '''
     def load(self):
         
-        '''This block is used to load the database from database file.'''
-        '''
+        print("Loading database...")
+        
+        ops=[]
+        
         try:
-            with open(self.db_name, 'r') as f:
+            with open(self.log_file_name, 'r') as f:
                 for line in f:
-                    key, value = line.strip().split(':', 1)
-                    self.data[key] = value
+                    if self.wal.custom_wal:
+                        _, _, _, _, state, operation, key, *value = line.strip().split(" ")
+                    else:
+                        _, _, _, state, operation, key, *value = line.strip().split(" ")
+                    operation = operation.lower()
+                    state = state.lower()
+                    state = state.replace("[", "").replace("]", "")
+                    # print(state,operation,key,value)
+                    value = ' '.join(value) if value else None
+                    print(f"Processing log entry: {line.strip()}")
+                    if self.wal.custom_wal:
+                        if state == "start" and operation != "init":
+                            ops.append((operation, key, value))
+                        elif state == "success" and len(ops)>0:
+                             ops.pop()
+                    elif state == "task" and operation != "init":
+                        ops.append((operation, key, value))
         except FileNotFoundError:
             pass
-        '''
         
-        print("Loading database...")
+        # print(ops) 
+                    
+        for operation, key, value in ops:
+            if operation == "set":
+                self.data[key] = ' '.join(value)
+                self.save()
+            elif operation == "delete":
+                del self.data[key]
+                self.save()
+            elif operation == "clear":
+                for k in list(self.data.keys()):
+                    del self.data[k]
+                    self.save()
+            elif operation == "drop":
+                self.drop()
+                
+        if self.wal.custom_wal:
+            self.load_database() #Think on this (Compute Overhead)
+        
+        ops.clear()
+        
+        # Old Implementation of loading database from log file
+        '''
         try:
             with open(self.log_file_name, 'r') as f:
                 for line in f:
@@ -135,7 +187,7 @@ class simpleDB:
                         self.drop()
         except FileNotFoundError:
             pass
-        
+        '''
     
     '''
     Drop the database and remove the log file.
@@ -155,3 +207,13 @@ class simpleDB:
         except Exception as e:
             print(f"Error deleting database: {e}")
     
+    
+    '''It is used to load the database from database file.'''
+    def load_database(self):
+        try:
+            with open(self.db_name, 'r') as f:
+                for line in f:
+                    key, value = line.strip().split(':', 1)
+                    self.data[key] = value
+        except FileNotFoundError:
+            pass

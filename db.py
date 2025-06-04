@@ -7,7 +7,8 @@ Prompts the user for commands to set, get, delete, check existence, clear, or dr
 def main():
     print("\n\nWelcome to simpleDB!\n\n")
     db_name = input("Enter database name: ").strip()
-    db = simpleDB(db_name)
+    custom_wal = input("Use custom WAL(Compute Efficient)  (y/n)? ").strip().lower() == 'y'
+    db = simpleDB(db_name,custom_wal)
     print(f"Database {db_name} initialized.")
     while True:
         command = input("Enter command (set/get/delete/exists/clear/drop/exit): ").strip().lower()
