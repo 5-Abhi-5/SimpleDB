@@ -6,6 +6,7 @@ This class allows setting, getting, deleting, checking existence, clearing, and 
 it uses a log file to record operations, ensuring that changes are durable and can be recovered in case of a crash.
 '''
 class simpleDB:
+    # Todo - Optimize Save function to write all data at once or in batches (Think on it) and Expire Keys (TTL) feature
     
     '''
     Initialize the simpleDB with a database name and an optional custom WAL flag.
@@ -38,7 +39,33 @@ class simpleDB:
                 self.wal.write_log("set", key, value, state="SUCCESS")
         else:
             print("operation failed")
-
+    
+    
+    '''
+    Increment the value associated with a key in the database.
+        Args:
+            key (str): The key to increment.
+        Returns:
+            bool: True if the key exists and was incremented, False otherwise.
+    If the key exists, it's value is incremented by 1.
+    If the operation is successful, the data is saved to the database file and a log entry is written.
+    If the operation fails, an error message is printed.
+    '''
+    def incr(self,key):
+        if key in self.data:
+            try:
+                self.wal.write_log("incr", key, self.data[key])
+                self.data[key] = int(self.data[key]) + 1
+                self.save() 
+                if self.wal.custom_wal:
+                    self.wal.write_log("incr", key, self.data[key], state="SUCCESS")
+                return True
+            except ValueError:
+                print(f"Value for key '{key}' is not an integer.")
+        else:
+            print(f"Key '{key}' does not exist.")
+        return False
+    
 
     '''
     Get the value associated with a key in the database.
@@ -49,8 +76,8 @@ class simpleDB:
     '''
     def get(self, key):
         return self.data.get(key, None)
-
-
+ 
+ 
     '''    
     Delete a key from the database.
         Args:   
@@ -63,12 +90,13 @@ class simpleDB:
             del self.data[key]
             self.save()
             if self.wal.custom_wal:
-                self.wal.write_log("set", key, state="SUCCESS")
+                self.wal.write_log("delete", key, state="SUCCESS")
         else:
             print("operation failed")
         
         
-    ''' Check if a key exists in the database.
+    ''' 
+    Check if a key exists in the database.
         Args:   
             key (str): The key to check for existence.
         Returns:
@@ -157,6 +185,9 @@ class simpleDB:
                 for k in list(self.data.keys()):
                     del self.data[k]
                     self.save()
+            elif operation == "incr":
+                self.data[key] = int(value)+1
+                self.save()
             elif operation == "drop":
                 self.drop()
                 
@@ -208,7 +239,9 @@ class simpleDB:
             print(f"Error deleting database: {e}")
     
     
-    '''It is used to load the database from database file.'''
+    '''
+    It is used to load the database from database file.
+    '''
     def load_database(self):
         try:
             with open(self.db_name, 'r') as f:

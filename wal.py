@@ -5,7 +5,6 @@ Write-Ahead Log (WAL) System for simpleDB
 This module implements a simple write-ahead log system for a key-value database.
 '''
 class wal:
-    '''Todo - Implement a custom write-ahead log (WAL) system for simpleDB.'''
     
     '''
     Initialize the WAL system with a log file name and a custom WAL boolean to mark for custom WAL implementation.

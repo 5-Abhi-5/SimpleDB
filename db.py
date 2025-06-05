@@ -11,7 +11,7 @@ def main():
     db = simpleDB(db_name,custom_wal)
     print(f"Database {db_name} initialized.")
     while True:
-        command = input("Enter command (set/get/delete/exists/clear/drop/exit): ").strip().lower()
+        command = input("Enter command (set/incr/get/delete/exists/clear/drop/exit): ").strip().lower()
         if command == "exit":
             print("\nExiting the database.\n")
             print("Database exited successfully.\n")
@@ -20,6 +20,12 @@ def main():
             _, key, value = command.split(maxsplit=2)
             db.set(key, value)
             print(f"Set {key} to {value}")
+        elif command.startswith("incr "):
+            _, key = command.split(maxsplit=1)
+            if db.incr(key):
+                print(f"Incremented {key}")
+            else:
+                print(f"Key {key} does not exist, cannot increment")
         elif command.startswith("get "):
             _, key = command.split(maxsplit=1)
             value = db.get(key)
