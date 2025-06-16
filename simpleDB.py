@@ -1,12 +1,13 @@
+import datetime as dt,os
 from wal import wal
+
 
 ''' 
 A simple key-value database class that uses a Write-Ahead Logging (WAL) mechanism for durability.
 This class allows setting, getting, deleting, checking existence, clearing, and dropping the database.
 it uses a log file to record operations, ensuring that changes are durable and can be recovered in case of a crash.
 '''
-class simpleDB:
-    # Todo - Optimize Save function to write all data at once or in batches (Think on it) and Expire Keys (TTL) feature
+class SimpleDB:
     
     '''
     Initialize the simpleDB with a database name and an optional custom WAL flag.
@@ -31,7 +32,7 @@ class simpleDB:
     If the operation is successful, the data is saved to the database file and a log entry is written.
     If the operation fails, an error message is printed.
     '''
-    def set(self, key, value):
+    def set(self, key, value, ttl=None):
         if wal.write_log(self.wal, "set", key, value):
             self.data[key] = value
             self.save()
@@ -122,9 +123,16 @@ class simpleDB:
     This method writes all key-value pairs in the data dictionary to the database file.
     '''
     def save(self):
-        with open(self.db_name,'w') as f:
+        with open(self.db_name + '.txt','w') as f:
             for key, value in self.data.items():
                 f.write(f"{key}:{value}\n")
+    
+    
+    '''
+        This method is used to expire keys based on a TTL.
+    '''
+    def expire_keys(self):
+       pass
     
     
     '''
@@ -227,12 +235,11 @@ class simpleDB:
     '''
     def drop(self):
         try:
-            import os
             self.data.clear()
-            self.wal.write_log("drop", self.db_name)
+            self.wal.write_log("drop", self.db_name + '.txt')
             self.wal.close_log_file()
             os.remove(self.log_file_name) #order matters (don't know why but first remove log file then database file) maybe because after init if no entry is there, then database file is not created at first place so how can we remove it
-            os.remove(self.db_name)
+            os.remove(self.db_name+ '.txt')
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -244,7 +251,7 @@ class simpleDB:
     '''
     def load_database(self):
         try:
-            with open(self.db_name, 'r') as f:
+            with open(self.db_name + '.txt', 'r') as f:
                 for line in f:
                     key, value = line.strip().split(':', 1)
                     self.data[key] = value

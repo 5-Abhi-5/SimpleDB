@@ -1,14 +1,25 @@
-from simpleDB import simpleDB
+from SimpleDB import SimpleDB
+from JsonSimpleDB import JsonSimpleDB
+from BinarySimpleDB import BinarySimpleDB
+
 
 '''
 Main function to interact with the simpleDB.
 Prompts the user for commands to set, get, delete, check existence, clear, or drop the database.
 '''
 def main():
-    print("\n\nWelcome to simpleDB!\n\n")
+    print("\n\n\t\t\t\t\tWelcome to SimpleDB!\n\n")
+    print("What kind of storage you need (txt/json/binary)?")
+    storage_type = input("Enter 'json' for JSON storage or 'binary' for Binary storage (default is txt): ").strip().lower()
+    if storage_type == "json":
+        db_class = JsonSimpleDB
+    elif storage_type == "binary":
+        db_class = BinarySimpleDB
+    else:
+        db_class = SimpleDB
     db_name = input("Enter database name: ").strip()
     custom_wal = input("Use custom WAL(Compute Efficient)  (y/n)? ").strip().lower() == 'y'
-    db = simpleDB(db_name,custom_wal)
+    db = db_class(db_name,custom_wal)
     print(f"Database {db_name} initialized.")
     while True:
         command = input("Enter command (set/incr/get/delete/exists/clear/drop/exit): ").strip().lower()
@@ -17,9 +28,13 @@ def main():
             print("Database exited successfully.\n")
             break
         elif command.startswith("set "):
-            _, key, value = command.split(maxsplit=2)
-            db.set(key, value)
-            print(f"Set {key} to {value}")
+            _, key, value, *ttl = command.split(maxsplit=3)
+            if ttl:
+                db.set(key, value, ttl)
+                print(f"Set {key} to {value} with TTL {ttl[0]}")
+            else:   
+                db.set(key, value)
+                print(f"Set {key} to {value}")
         elif command.startswith("incr "):
             _, key = command.split(maxsplit=1)
             if db.incr(key):
@@ -37,7 +52,10 @@ def main():
         elif command.startswith("exists "):
             _, key = command.split(maxsplit=1)
             exists = db.exists(key)
-            print(f"{key} exists: {exists}")
+            if exists:
+                print(f"{key} exists")
+            else:
+                print(f"{key} does not exist")
         elif command == "clear":
             db.clear()
             print("Database cleared")
