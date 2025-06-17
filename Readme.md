@@ -1,6 +1,6 @@
 # 🪶 SimpleDB
 
-**SimpleDB** is a lightweight key-value database written in Python from scratch. It provides persistent storage on disk and supports common operations like `SET`, `INCR`, `GET`, `DELETE`, `EXISTS`, `CLEAR`, and `DROP`. The database is accessible via a simple CLI and supports optional TTL key expiry(coming soon...), Write-Ahead Logging (WAL), and pluggable storage formats: `JSON` , `Binary` and `Txt` (Default).
+**SimpleDB** is a lightweight key-value database written in Python from scratch. It provides persistent storage on disk and supports common operations like `SET`, `INCR`, `GET`, `DELETE`, `EXISTS`, `CLEAR`, and `DROP`. The database is accessible via a simple CLI and supports optional TTL key expiry, Write-Ahead Logging (WAL), and pluggable storage formats: `JSON` , `Binary` and `Txt` (Default).
 
 ---
 
@@ -11,7 +11,7 @@
 - 🖥️ Simple CLI for executing commands
 - ⚡ Fast in-memory access with file sync
 - 🧾 Write-Ahead Logging (WAL) for crash recovery
-- ⏳ TTL (Time-To-Live) for expiring keys (Soon...)
+- ⏳ TTL (Time-To-Live) for expiring keys (Json storage format not supported as of now⚒️)
 - 🧮 Storage format support:
   - `json`: human-readable
   - `binary`: compact and fast

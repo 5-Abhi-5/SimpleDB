@@ -18,6 +18,7 @@ class SimpleDB:
     def __init__(self, db_name,custom_wal=False):
         self.db_name = db_name
         self.data = {}
+        self.expiry={}
         self.log_file_name = f"{db_name}.log"
         self.wal = wal(self.log_file_name,custom_wal)
         self.wal.write_log("init", db_name)
@@ -33,11 +34,16 @@ class SimpleDB:
     If the operation fails, an error message is printed.
     '''
     def set(self, key, value, ttl=None):
-        if wal.write_log(self.wal, "set", key, value):
+        if self.wal.write_log( "set", key, value, ttl[0] if ttl else None):
             self.data[key] = value
+            if ttl:
+                expiry_time = dt.datetime.now() + dt.timedelta(seconds=int(ttl[0]))
+                self.expiry[key] = expiry_time
+            else:
+                self.expiry[key] = None
             self.save()
             if self.wal.custom_wal:
-                self.wal.write_log("set", key, value, state="SUCCESS")
+                self.wal.write_log("set", key, value, ttl[0] if ttl else None, state="SUCCESS")
         else:
             print("operation failed")
     
@@ -53,18 +59,17 @@ class SimpleDB:
     If the operation fails, an error message is printed.
     '''
     def incr(self,key):
+        self.expire_keys()
         if key in self.data:
             try:
                 self.wal.write_log("incr", key, self.data[key])
                 self.data[key] = int(self.data[key]) + 1
                 self.save() 
                 if self.wal.custom_wal:
-                    self.wal.write_log("incr", key, self.data[key], state="SUCCESS")
+                    self.wal.write_log("incr", key, self.data[key]-1, state="SUCCESS")
                 return True
             except ValueError:
                 print(f"Value for key '{key}' is not an integer.")
-        else:
-            print(f"Key '{key}' does not exist.")
         return False
     
 
@@ -76,6 +81,7 @@ class SimpleDB:
             str: The value associated with the key, or None if the key does not exist.
     '''
     def get(self, key):
+        self.expire_keys()
         return self.data.get(key, None)
  
  
@@ -87,8 +93,11 @@ class SimpleDB:
     If the operation fails, an error message is printed.        
     '''
     def delete(self, key):
-        if key in self.data and self.wal.write_log("delete", key):
+        if key in self.data:
+            self.wal.write_log("delete", key)
             del self.data[key]
+            if key in self.expiry:
+                del self.expiry[key]
             self.save()
             if self.wal.custom_wal:
                 self.wal.write_log("delete", key, state="SUCCESS")
@@ -104,6 +113,7 @@ class SimpleDB:
             bool: True if the key exists, False otherwise.
     '''
     def exists(self, key):
+        self.expire_keys()
         return key in self.data
     
     
@@ -126,14 +136,26 @@ class SimpleDB:
         with open(self.db_name + '.txt','w') as f:
             for key, value in self.data.items():
                 f.write(f"{key}:{value}\n")
+        with open(self.db_name + '_expiry.txt', 'w') as f:
+            for key, value in self.expiry.items():
+                f.write(f"{key}:{value.isoformat() if value else 'None'}\n")
     
     
     '''
-        This method is used to expire keys based on a TTL.
+        This method checks for keys that have expired based on their TTL (Time To Live).
+        If a key has a TTL and the current time exceeds the TTL, the key is deleted from the database.
     '''
     def expire_keys(self):
-       pass
-    
+        current_time = dt.datetime.now()
+        keys_to_delete = []
+        for key, value in self.expiry.items():
+            if value and value <= current_time:
+                keys_to_delete.append(key)
+        for key in keys_to_delete:
+            if key in self.data:
+                self.delete(key)  
+                print(f"Key '{key}' has expired and has been deleted.")
+        self.save()  
     
     '''
     Load the database from the log file.
@@ -157,17 +179,24 @@ class SimpleDB:
         
         ops=[]
         
+        self.load_expiry() 
+        if self.wal.custom_wal:
+            self.load_database() #Think on this (Compute Overhead)
+            self.save() 
+            return
+        
         try:
             with open(self.log_file_name, 'r') as f:
                 for line in f:
                     if self.wal.custom_wal:
-                        _, _, _, _, state, operation, key, *value = line.strip().split(" ")
+                        _, _, _, _, state, operation, key, *extra = line.strip().split(" ")
                     else:
-                        _, _, _, state, operation, key, *value = line.strip().split(" ")
+                        _, _, _, state, operation, key, *extra = line.strip().split(" ")
                     operation = operation.lower()
                     state = state.lower()
                     state = state.replace("[", "").replace("]", "")
                     # print(state,operation,key,value)
+                    value=extra[0] if extra else None
                     value = ' '.join(value) if value else None
                     print(f"Processing log entry: {line.strip()}")
                     if self.wal.custom_wal:
@@ -179,54 +208,24 @@ class SimpleDB:
                         ops.append((operation, key, value))
         except FileNotFoundError:
             pass
-        
-        # print(ops) 
                     
         for operation, key, value in ops:
             if operation == "set":
                 self.data[key] = ' '.join(value)
-                self.save()
             elif operation == "delete":
                 del self.data[key]
-                self.save()
             elif operation == "clear":
                 for k in list(self.data.keys()):
                     del self.data[k]
-                    self.save()
             elif operation == "incr":
                 self.data[key] = int(value)+1
-                self.save()
             elif operation == "drop":
                 self.drop()
                 
-        if self.wal.custom_wal:
-            self.load_database() #Think on this (Compute Overhead)
-        
+        self.save()
         ops.clear()
+        self.expire_keys() 
         
-        # Old Implementation of loading database from log file
-        '''
-        try:
-            with open(self.log_file_name, 'r') as f:
-                for line in f:
-                    _, _, _, _, operation, key, *value = line.strip().split(" ")
-                    operation = operation.lower()
-                    print(f"Processing log entry: {line.strip()}")
-                    if operation == "set":
-                        self.data[key] = ' '.join(value)
-                        self.save()
-                    elif operation == "delete":
-                        del self.data[key]
-                        self.save()
-                    elif operation == "clear":
-                        for k in list(self.data.keys()):
-                            del self.data[k]
-                            self.save()
-                    elif operation == "drop":
-                        self.drop()
-        except FileNotFoundError:
-            pass
-        '''
     
     '''
     Drop the database and remove the log file.
@@ -240,6 +239,7 @@ class SimpleDB:
             self.wal.close_log_file()
             os.remove(self.log_file_name) #order matters (don't know why but first remove log file then database file) maybe because after init if no entry is there, then database file is not created at first place so how can we remove it
             os.remove(self.db_name+ '.txt')
+            os.remove(self.db_name + '_expiry.txt')
         except FileNotFoundError:
             pass
         except Exception as e:
@@ -247,7 +247,7 @@ class SimpleDB:
     
     
     '''
-    It is used to load the database from database file.
+    It is used to load the data from database file.
     '''
     def load_database(self):
         try:
@@ -257,3 +257,21 @@ class SimpleDB:
                     self.data[key] = value
         except FileNotFoundError:
             pass
+    
+    
+    '''
+    It is used to load the expiry time from database_expiry file.
+    '''
+    def load_expiry(self):
+        try:
+            with open(self.db_name + '_expiry.txt', 'r') as f:
+                for line in f:
+                    key, value = line.strip().split(':', 1)
+                    if value == 'None':
+                        self.expiry[key] = None
+                    else:
+                        self.expiry[key] = dt.datetime.fromisoformat(value)
+        except FileNotFoundError:
+            pass
+        
+    

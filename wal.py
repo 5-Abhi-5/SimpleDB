@@ -40,7 +40,7 @@ class wal:
         Returns:
             bool: True if the log entry was written successfully, False otherwise.
     '''
-    def write_log(self, operation, key, value=None,state="START") -> bool:
+    def write_log(self, operation, key, value=None, expiry=None,state="START") -> bool:
         operation = operation.upper()
         if self.log_file is None:
             print("Log file is not open. Cannot write log.")
@@ -49,12 +49,18 @@ class wal:
         try:
             if self.custom_wal:
                 if value is not None:
-                    log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] [{state}] {operation} {key} {value}\n"
+                    if expiry is not None:
+                        log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] [{state}] {operation} {key} {value} with TTL {expiry} seconds\n"
+                    else:
+                        log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] [{state}] {operation} {key} {value}\n"
                 else:
                     log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] [{state}] {operation} {key}\n"
             else:
                 if value is not None:
-                    log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] {operation} {key} {value}\n"
+                    if expiry is not None:
+                        log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] {operation} {key} {value} with TTL {expiry} seconds\n"
+                    else:
+                        log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] {operation} {key} {value}\n"
                 else:
                     log_entry = f"[Timestamp: {dt.datetime.now()}] [Task] {operation} {key}\n"
             self.log_file.write(log_entry)

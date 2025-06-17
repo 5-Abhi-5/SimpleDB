@@ -15,6 +15,8 @@ class BinarySimpleDB(SimpleDB):
     def save(self):
         with open(self.db_name + '.bin', 'wb') as f:
             pickle.dump(self.data, f)
+        with open(self.db_name + '_expiry.bin', 'wb') as f:
+            pickle.dump(self.expiry, f)
 
 
     '''
@@ -25,6 +27,8 @@ class BinarySimpleDB(SimpleDB):
         try:
             with open(self.db_name + '.bin', 'rb') as f:
                 self.data = pickle.load(f)
+            with open(self.db_name + '_expiry.bin', 'rb') as f:
+                self.expiry = pickle.load(f)
         except FileNotFoundError:
             self.data = {}
             
@@ -38,5 +42,6 @@ class BinarySimpleDB(SimpleDB):
             self.wal.close_log_file()
             os.remove(self.db_name + '.bin')
             os.remove(self.log_file_name)
+            os.remove(self.db_name + '_expiry.bin')
         except FileNotFoundError:
             pass
