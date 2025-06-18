@@ -1,4 +1,4 @@
-from SimpleDB import SimpleDB
+from database.SimpleDB import SimpleDB
 import pickle,os
 
 # Todo- implement serialization and deserialization from scratch

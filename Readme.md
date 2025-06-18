@@ -11,7 +11,7 @@
 - 🖥️ Simple CLI for executing commands
 - ⚡ Fast in-memory access with file sync
 - 🧾 Write-Ahead Logging (WAL) for crash recovery
-- ⏳ TTL (Time-To-Live) for expiring keys (Json storage format not supported as of now⚒️)
+- ⏳ TTL (Time-To-Live) for expiring keys 
 - 🧮 Storage format support:
   - `json`: human-readable
   - `binary`: compact and fast

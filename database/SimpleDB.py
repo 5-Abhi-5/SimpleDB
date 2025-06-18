@@ -1,5 +1,5 @@
 import datetime as dt,os
-from wal import wal
+from utilities.logging.wal import wal
 
 
 ''' 
@@ -101,8 +101,10 @@ class SimpleDB:
             self.save()
             if self.wal.custom_wal:
                 self.wal.write_log("delete", key, state="SUCCESS")
+            return True
         else:
             print("operation failed")
+            return False
         
         
     ''' 

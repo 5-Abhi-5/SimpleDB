@@ -1,6 +1,6 @@
-from SimpleDB import SimpleDB
-from JsonSimpleDB import JsonSimpleDB
-from BinarySimpleDB import BinarySimpleDB
+from database.SimpleDB import SimpleDB
+from database.JsonSimpleDB import JsonSimpleDB
+from database.BinarySimpleDB import BinarySimpleDB
 
 
 '''
@@ -37,7 +37,8 @@ def main():
                 print(f"Set {key} to {value}")
         elif command.startswith("incr "):
             _, key = command.split(maxsplit=1)
-            if db.incr(key):
+            res = db.incr(key)
+            if res:
                 print(f"Incremented {key}")
             else:
                 print(f"Key {key} does not exist, cannot increment")
@@ -47,12 +48,15 @@ def main():
             print(f"{key} = {value}")
         elif command.startswith("delete "):
             _, key = command.split(maxsplit=1)
-            db.delete(key)
-            print(f"Deleted {key}")
+            res = db.delete(key)
+            if res:
+                print(f"Deleted {key}")
+            else:
+                print(f"Key {key} does not exist, cannot delete")
         elif command.startswith("exists "):
             _, key = command.split(maxsplit=1)
-            exists = db.exists(key)
-            if exists:
+            res = db.exists(key)
+            if res:
                 print(f"{key} exists")
             else:
                 print(f"{key} does not exist")
