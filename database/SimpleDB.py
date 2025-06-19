@@ -1,5 +1,5 @@
 import datetime as dt,os
-from utilities.logging.wal import wal
+from utilities.logger.wal import wal
 
 
 ''' 

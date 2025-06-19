@@ -65,13 +65,14 @@ def main():
             print("Database cleared")
         elif command == "drop":
             db.drop()
-            print("Database deleted")
             print("\nExiting the database.\n")
             print("Database exited successfully.\n")
+            print("Database deleted")
             break
         else:
             print("Unknown command")
+ 
       
-            
+'''Defines the main entry point for the script.'''
 if __name__ == "__main__":
     main()     
