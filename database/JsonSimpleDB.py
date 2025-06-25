@@ -1,5 +1,7 @@
 from database.SimpleDB import SimpleDB
+from utilities.parser.JsonParser import JsonParser as parser
 import json,os,datetime as dt
+
 
 # Todo- implement serialization and deserialization from scratch
 """
@@ -13,40 +15,53 @@ class JsonSimpleDB(SimpleDB):
         Save the database to a JSON file.
     """
     def save(self): 
-        with open(self.db_name + '.json', 'w') as f:
-            json.dump(self.data, f)
+        
+        json_parser = parser()
+        
+        # with open(self.db_name + '.json', 'w') as f:
+            # json.dump(self.data, f)
+        json_parser.dump_data(self.data,self.db_name + '.json')
             
         # Overhead of copying dictionary for making data serializable (optimize later)
-        temp=self.expiry.copy()
-        for key, value in temp.items():
-            if value:
-                temp[key] = value.isoformat() 
-            else:
-                temp[key] = 'None'
+        # temp=self.expiry.copy()
+        # for key, value in temp.items():
+        #     if value:
+        #         temp[key] = value.isoformat() 
+        #     else:
+        #         temp[key] = 'None'
                      
-        with open(self.db_name + '_expiry.json', 'w') as f:
-            json.dump(temp, f)
+        # # with open(self.db_name + '_expiry.json', 'w') as f:
+        #     # json.dump(temp, f)
+        #     # json_parser.dump_data(temp, f)
+        # json_parser.dump_data(temp, self.db_name + '_expiry.json')
+            
         
-        temp.clear()
+        # temp.clear()
 
 
     """
         Load the database from a JSON file.
     """
     def load(self):
+
     # Add Wal Support
+        json_parser = parser()
         try:
-            with open(self.db_name + '.json', 'r') as f:
-                self.data = json.load(f)
+            # with open(self.db_name + '.json', 'r') as f:
+                # self.data = json.load(f)
+            self.data = json_parser.load_data(self.db_name + '.json')
                 
-            with open(self.db_name + '_expiry.json', 'r') as f:
-                self.expiry = json.load(f) 
+            # with open(self.db_name + '_expiry.json', 'r') as f:
+                # self.expiry = json.load(f) 
+                # self.expiry = json_parser.load_data(f)
+            # self.expiry=json_parser.load_data(self.db_name + '_expiry.json')
+
              
-            for key, value in self.expiry.items():
-                if value == 'None':
-                    self.expiry[key] = None
-                else:
-                    self.expiry[key] = dt.datetime.fromisoformat(str(value)) 
+            # for key, value in self.expiry.items():
+            #     if value == 'None':
+            #         self.expiry[key] = None
+            #     else:
+            #         self.expiry[key] = dt.datetime.fromisoformat(str(value)) 
             
         except FileNotFoundError:
             self.data = {}
